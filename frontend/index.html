@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Page</title>
+  <style>
+    body {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .form-header {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #login {
+      display: none;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-top: 10px;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-header">
+    <button onclick="showLogin()">Login</button>
+    <button onclick="showSignup()">Signup</button>
+  </div>
+  <div class="forms">
+    <form id="signup">
+      <input type="email" placeholder="example@gmail.com" id="s-email" required />
+      <input type="password" placeholder="Password" id="s-password" required />
+      <input type="password" placeholder="Confirm Password" id="repeat-password" required />
+      <input type="submit" id="s-submit" value="Signup" />
+    </form>
+    <form id="login">
+      <input type="email" placeholder="example@gmail.com" id="l-email" required />
+      <input type="password" placeholder="Password" id="l-password" required />
+      <input type="submit" id="l-submit" value="Login" />
+    </form>
+  </div>
+</body>
+<script>
+  // const baseURL = 'http://localhost:2001'
+  const baseURL = "https://lively-cow-pocket.cyclic.app"
+  const loginForm = document.getElementById("login");
+  const signupForm = document.getElementById("signup");
+
+  function showLogin() {
+    loginForm.style.display = "flex";
+    signupForm.style.display = "none";
+  }
+
+  function showSignup() {
+    loginForm.style.display = "none";
+    signupForm.style.display = "flex";
+  }
+
+  signupForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    if (signupForm["s-password"].value !== signupForm["repeat-password"].value) {
+      return alert("Password mismatch");
+    }
+    const userDetails = {
+      Email: signupForm["s-email"].value,
+      Password: signupForm["s-password"].value
+    }
+    signupForm["s-submit"].value = "Loading..."
+    fetch(`${baseURL}/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userDetails)
+    })
+      .then(r => r.json())
+      .then(res => {
+        alert(res.message)
+        signupForm.reset()
+      })
+      .catch(err => {
+        console.log(err)
+        alert("Something went wrong")
+      })
+      .finally(() => {
+        signupForm["s-submit"].value = "Signup"
+      })
+  });
+
+  loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const userDetails = {
+      Email: loginForm["l-email"].value,
+      Password: loginForm["l-password"].value
+    }
+    loginForm["l-submit"].value = "Loading..."
+    fetch(`${baseURL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userDetails)
+    })
+      .then(r => r.json())
+      .then(res => {
+        localStorage.setItem("token", res.token)
+        alert(res.message)
+        loginForm.reset()
+        window.location.href = "./dashboard.html"
+      })
+      .catch(err => {
+        console.log(err)
+        alert("Something went wrong")
+      })
+      .finally(() => {
+        loginForm["l-submit"].value = "Login"
+      })
+  });
+
+</script>
+</html>

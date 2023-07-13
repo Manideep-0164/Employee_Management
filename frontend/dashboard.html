@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        #Employee {
+            width: 20%;
+            display: none;
+            flex-direction: column;
+            margin-top: 10px;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="heading">Employee Management Software</div>
+    <button onclick="addEmployee()">Add Employee</button>
+    <form id="Employee">
+        <input type="text" placeholder="First Name" id="fname" required />
+        <input type="text" placeholder="Last Name" id="lname" required />
+        <input type="email" placeholder="example@gmail.com" id="email" required />
+        <select id="department">
+            <option value="">Department</option>
+            <option value="Tech">Tech</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Operations">Operations</option>
+        </select>
+        <input type="number" id="salary" placeholder="Salary" required />
+        <input type="submit" id="emp-submit" value="submit">
+    </form>
+    <div class="features">
+        <select id="filter">
+            <option value="">Department</option>
+            <option value="Tech">Tech</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Operations">Operations</option>
+        </select>
+        <select id="salary-filter">
+            <option value="">Salary</option>
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+        </select>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody id="t-body">
+        </tbody>
+    </table>
+
+</body>
+<script>
+    // const baseURL = 'http://localhost:2001'
+    const baseURL = "https://lively-cow-pocket.cyclic.app"
+
+    const token = localStorage.getItem("token") || null;
+    const empForm = document.getElementById("Employee")
+    let maincont = document.getElementById("t-body")
+    let dptflter = document.getElementById("filter")
+    let sortSalary = document.getElementById("salary-filter")
+
+    let data = []
+
+    function addEmployee() {
+        empForm.style.display = "flex";
+    }
+
+    window.onload = () => {
+        fetchonload()
+    }
+
+    function fetchonload() {
+        fetch(`${baseURL}/employees/get`, {
+            headers: { Authorization: token }
+        })
+            .then(r => r.json())
+            .then(res => {
+                data = res;
+                displayData(data)
+                console.log(res)
+            })
+            .catch(err => {
+                console.log(err)
+                alert("Something went wrong")
+            })
+    }
+
+    function displayData(data) {
+        maincont.innerHTML = null;
+        data.forEach(ele => {
+            let tr = document.createElement("tr");
+            let fname = document.createElement("td");
+            fname.innerText = ele.FirstName;
+            let lname = document.createElement("td");
+            lname.innerText = ele.LastName;
+            let email = document.createElement("td");
+            email.innerText = ele.Email;
+            let department = document.createElement("td");
+            department.innerText = ele.Department;
+            let salary = document.createElement("td");
+            salary.innerText = ele.Salary;
+            let edit = document.createElement("td");
+            edit.innerText = "edit"
+            let deletebtn = document.createElement("td");
+            deletebtn.innerText = 'Delete';
+
+            deletebtn.addEventListener("click", () => {
+                fetch(`${baseURL}/employees/${ele._id}`, {
+                    method: "DELETE",
+                    headers: { Authorization: token }
+                })
+                    .then(r => r.json())
+                    .then(res => {
+                        let filteredData = data.filter(e => e._id !== ele._id)
+                        displayData(filteredData)
+                    })
+                    .catch(err => {
+                        console.log(err)
+                        alert("Something went wrong")
+                    })
+            })
+
+            tr.append(fname, lname, email, department, salary, edit, deletebtn)
+            maincont.append(tr)
+        })
+    }
+
+    empForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const empDetails = {
+            FirstName: empForm["fname"].value,
+            LastName: empForm["lname"].value,
+            Email: empForm["email"].value,
+            Department: empForm["department"].value,
+            Salary: empForm["salary"].value,
+        }
+        empForm["emp-submit"].value = "Loading..."
+        fetch(`${baseURL}/employees`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: token },
+            body: JSON.stringify(empDetails)
+        })
+            .then(r => r.json())
+            .then(res => {
+                alert(res.message)
+                fetchonload()
+                empForm.reset()
+                empForm.style.display = "none";
+            })
+            .catch(err => {
+                console.log(err)
+                alert("Something went wrong")
+            })
+            .finally(() => {
+                empForm["emp-submit"].value = "submit"
+            })
+    });
+
+    dptflter.addEventListener("change", (e) => {
+        fetch(`${baseURL}/employees/get?filter=${e.target.value}&sort=${sortSalary.value}`, {
+            headers: { Authorization: token }
+        })
+            .then(r => r.json())
+            .then(res => {
+                displayData(res)
+                console.log(res)
+            })
+            .catch(err => {
+                console.log(err)
+                alert("Something went wrong")
+            })
+    })
+
+    sortSalary.addEventListener("change", (e) => {
+        fetch(`${baseURL}/employees/get?sort=${e.target.value}&filter=${dptflter.value}`, {
+            headers: { Authorization: token }
+        })
+            .then(r => r.json())
+            .then(res => {
+                displayData(res)
+                console.log(res)
+            })
+            .catch(err => {
+                console.log(err)
+                alert("Something went wrong")
+            })
+    })
+</script>
+</html>
